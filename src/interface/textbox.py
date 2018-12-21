@@ -31,10 +31,11 @@ import json
 class ThreadSafeText(Text, OTClient):
     is_refreshing = False
     def __init__(self, root, **options):
+        
+        # Inheret  from Tk.Text and OT client
+        
         Text.__init__(self, root.root, **options)
         OTClient.__init__(self, revision=0)
-
-        self.operation = TextOperation() # what is this for?
 
         self.constraint = TextConstraint(self)
 
@@ -78,7 +79,9 @@ class ThreadSafeText(Text, OTClient):
 
         self.marker     = None
         self.local_peer = None
-        self.view       = (0, 0) # where the scroll bar is
+        
+        self.scroll_view  = None
+        self.scroll_index = None
 
         self.configure_font()
 
@@ -165,7 +168,7 @@ class ThreadSafeText(Text, OTClient):
 
         # Only apply if the operation is not empty
 
-        if get_operation_size(ops) != 0:
+        if not empty_operation(ops):
 
             operation = TextOperation(ops)
             text = self.read()
@@ -732,12 +735,25 @@ class ThreadSafeText(Text, OTClient):
     def store_view(self):
         """ Store the location of the interface view, i.e. scroll, such that the 
             self.marker.bbox will be the same when self.reset_view() is called """
-    
-        # The index of the top line in the editor
 
-        self.scroll_index = self.index("@0,0")
-        self.scroll_view  = self.bbox(self.scroll_index)
-        
+        # If we are at the top of the screen, and the marker is less than 2/3 down the page, keep at top
+
+        top_row    = self.get_visible_row_top()
+        marker_row = self.get_marker_row()
+        bottom_row = self.get_visible_row_bottom()
+
+        if top_row == 1:
+
+            if marker_row < (bottom_row * 0.66):
+
+                self.scroll_distance = self.get_num_lines() * -1
+
+                return
+    
+        # Store the current distance between top row and marker.mark
+
+        self.scroll_distance = top_row - marker_row
+
         return
 
     def reset_view(self):
@@ -747,20 +763,31 @@ class ThreadSafeText(Text, OTClient):
 
         self.yview('move', 0.0)
         
-        # Scroll until the y-value is the same as previous
+        # Scroll until the scroll-distance is the same as previous (or the end)
 
         for n in range(self.get_num_lines()):
 
-            top_row = int(self.index("@0,0").split(".")[0])
-            scr_row = int(self.scroll_index.split(".")[0])
-            
-            if top_row >= scr_row:
+            if (self.get_visible_row_top() - self.get_marker_row()) >= self.scroll_distance:
 
                 break
 
             self.yview('scroll', 1, 'units')
 
         return
+
+    def get_visible_row_top(self):
+        """ Returns the row number of the top-most visible line """
+        index = self.index("@0,0")
+        return int(index.split(".")[0])
+
+    def get_visible_row_bottom(self):
+        """ Returns the row number of the bottom-most visible line """
+        index = self.index("@0,{}".format(self.winfo_height()))
+        return int(index.split(".")[0])
+
+    def get_marker_row(self):
+        index = self.index(self.marker.mark)
+        return int(index.split(".")[0])
 
     def configure_font(self):
         """ Sets up font for the editor """

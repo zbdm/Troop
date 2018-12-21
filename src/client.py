@@ -27,25 +27,28 @@ class Client:
     
     def __init__(self, **kwargs):
 
+        self.is_alive = True
+
         # Start the UI
 
         self.input = ConnectionInput(self, **kwargs)
         self.input.start()
 
-    def setup(self, host="", port="", name="", password="", lang=FOXDOT, logging=False, ipv6=False):
+    def setup(self, host="", port="", name="", password="", lang=FOXDOT, args="", logging=False, ipv6=False):
 
         # ConnectionInput(host, port)
         
         self.hostname = str(host)
         self.port     = int(port)
         self.name     = str(name if name is not None else hostname)
+        self.args     = args
         self.id       = None
 
         # Try and connect to server
 
         try:
             
-            self.send = Sender().connect(self.hostname, self.port, self.name, ipv6, password)
+            self.send = Sender(self).connect(self.hostname, self.port, self.name, ipv6, password)
 
             if not self.send.connected:
                 
@@ -76,7 +79,7 @@ class Client:
         # Continue with set up
         # Set up a receiver on the connected socket
           
-        self.recv = Receiver(self.send.conn)
+        self.recv = Receiver(self, self.send.conn)
         self.recv.start()
 
         self.address  = (self.send.hostname, self.send.port)
@@ -85,15 +88,15 @@ class Client:
 
         try:
 
-            lang_id = getInterpreter(lang)
+            lang = getInterpreter(lang)
 
-            if lang_id in langtypes:
+            if lang in langtypes:
 
-                self.lang = langtypes[lang_id]()
+                self.lang = langtypes[lang](self.args)
 
             else:
 
-                self.lang = Interpreter(lang_id)
+                self.lang = Interpreter(lang, self.args)
 
         except ExecutableNotFoundError as e:
 
@@ -132,30 +135,25 @@ class Client:
                     conf[line[0]] = line[1]
                 except:
                     pass
-        return conf['host'], int(conf['port'])
+        return str(conf['host']), int(conf['port'])
 
     def update_send(self):
         """ Continually polls the queue and sends any messages to the server """
         try:
-            while True:
+            while self.send.connected:
                 
-                if self.send.connected:
-                
-                    try:
-                        
-                        msg = self.send_queue.get_nowait()
-
-                        self.send( msg )
-
-                    except ConnectionError as e:
-                        
-                        return print(e)
+                try:
                     
-                    self.ui.root.update_idletasks()
+                    msg = self.send_queue.get_nowait()
+
+                    self.send( msg )
+
+                except ConnectionError as e:
+                    
+                    return print(e)
                 
-                else:
+                self.ui.root.update_idletasks()
                 
-                    break
         # Break when the queue is empty
         except queue.Empty:
             pass
@@ -167,6 +165,8 @@ class Client:
             
     def kill(self):
         """ Kills the connection sockets and UI correctly """
+
+        self.is_alive = False
 
         for attr in (self.recv, self.send, self.ui):
 

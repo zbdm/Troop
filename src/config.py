@@ -1,6 +1,17 @@
 import sys
 import os, os.path
 
+# Check for location of Python
+
+if sys.argv[0] == sys.executable: # If this is compiled file, just use python
+
+    PYTHON_EXECUTABLE = "python"
+
+else:
+
+    PYTHON_EXECUTABLE = os.path.basename(sys.executable)
+
+
 PY_VERSION = sys.version_info[0]
 
 # Any Py2to3
@@ -167,4 +178,5 @@ def exe_exists(exe):
     )
 
 class ExecutableNotFoundError(Exception):
-    pass
+    def __init__(self, executable):
+        Exception.__init__(self, "{}: '{}' is not a valid executable".format(self.__class__.__name__, executable))
