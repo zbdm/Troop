@@ -224,7 +224,7 @@ class Interface(BasicInterface):
         self.text.bind("<{}-Home>".format(CtrlKey),     self.key_ctrl_home)
         self.text.bind("<{}-End>".format(CtrlKey),      self.key_ctrl_end)
         self.text.bind("<{}-period>".format(CtrlKey),   self.stop_sound)
-        self.text.bind("<Alt-period>".format(ctrlKey),  self.release_nodes)
+        self.text.bind("<Alt-period>",                      self.release_nodes)
 
 
         self.text.bind("<{}-BackSpace>".format(CtrlKey),   self.key_ctrl_backspace)
@@ -245,6 +245,7 @@ class Interface(BasicInterface):
         self.text.bind("<Shift-End>",   self.select_end)
         self.text.bind("<Shift-Home>",  self.select_home)
         self.text.bind("<{}-a>".format(CtrlKey), self.select_all)
+        self.text.bind("<{}-d>".format(ctrlKey), self.duplicate_line)
 
         # Copy and paste key bindings
 
@@ -1064,6 +1065,17 @@ class Interface(BasicInterface):
         """ Overrides handling of selected areas """
         self.text.tag_remove(SEL, "1.0", END)
         return
+    
+    def duplicate_line(self, event=None):
+        """Duplicate the line """
+        row, _ = self.text.number_index_to_row_col(self.text.marker.get_index_num())
+        a, b   = "{}.0".format(row), "{}.end".format(row)
+
+            #if self.text.get(a, b).lstrip() != "":
+
+             #   self.add_to_send_queue( MSG_EVALUATE_BLOCK(self.text.marker.id, row, row) )
+
+        
 
     # Evaluating lines
     # ================
