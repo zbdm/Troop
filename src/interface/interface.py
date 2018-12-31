@@ -224,6 +224,8 @@ class Interface(BasicInterface):
         self.text.bind("<{}-Home>".format(CtrlKey),     self.key_ctrl_home)
         self.text.bind("<{}-End>".format(CtrlKey),      self.key_ctrl_end)
         self.text.bind("<{}-period>".format(CtrlKey),   self.stop_sound)
+        self.text.bind("<Alt-period>".format(ctrlKey),  self.release_nodes)
+
 
         self.text.bind("<{}-BackSpace>".format(CtrlKey),   self.key_ctrl_backspace)
         self.text.bind("<{}-Delete>".format(CtrlKey),      self.key_ctrl_delete)
