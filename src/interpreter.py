@@ -267,6 +267,9 @@ class FoxDotInterpreter(BuiltinInterpreter):
 
     def stop_sound(self):
         return "Clock.clear()"
+    
+    def release_nodes(self):
+        return "DefaultServer.freeAllNodes()"
 
 
 class OSCInterpreter(Interpreter):
